@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-"""
-Bulk Mailer - A Tkinter desktop app for managing a mailing list and sending
-bulk HTML/plain-text emails with attachments, batching, scheduling and a
-sent-flag tracking system.
-
-Single-file application. See requirements.txt for dependencies.
-"""
-
 import os
 import re
 import csv
@@ -28,27 +19,20 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog
 
 try:
-    import schedule  # optional - falls back to threading.Timer if missing
+    import schedule  
     HAS_SCHEDULE = True
 except ImportError:
     HAS_SCHEDULE = False
 
-# ----------------------------------------------------------------------------
-# Constants & Paths
-# ----------------------------------------------------------------------------
 
 if getattr(sys, "frozen", False):
-    # Running as a PyInstaller-built executable: __file__ points into a
-    # temporary extraction folder that's wiped on exit, so store data next
-    # to the actual executable instead or it would appear to "disappear"
-    # between runs.
+    
     APP_DIR = os.path.dirname(os.path.abspath(sys.executable))
 else:
     try:
         APP_DIR = os.path.dirname(os.path.abspath(__file__))
     except NameError:
-        # __file__ isn't defined when running inside Jupyter/IPython cells or
-        # an interactive REPL - fall back to the current working directory.
+      
         APP_DIR = os.path.abspath(os.getcwd())
 EMAILS_FILE = os.path.join(APP_DIR, "emails.json")
 LOG_FILE = os.path.join(APP_DIR, "bulk_mailer.log")
@@ -63,36 +47,33 @@ PROVIDERS = {
     "Custom SMTP":      {"server": "",                        "port": 587, "tls": True,  "ssl": False},
 }
 
-# ----------------------------------------------------------------------------
-# "Sunset" theme: palette + small gradient/animation helpers
-# ----------------------------------------------------------------------------
 
 SUNSET_STOPS = [
-    (255, 255, 255),  # white
-    (219, 234, 254),  # pale blue
+    (255, 255, 255),  
+    (219, 234, 254),  
 ]
 
 HERO_STOPS = [
-    (12, 24, 58),      # deep navy
-    (29, 65, 148),     # rich blue
-    (37, 99, 235),     # accent blue
-    (96, 165, 250),    # light sky blue
+    (12, 24, 58),      
+    (29, 65, 148),     
+    (37, 99, 235),     
+    (96, 165, 250),    
 ]
 
-PANEL_BG      = "#ffffff"   # card / frame background
-PANEL_BG_2    = "#eef2f8"   # slightly tinted panel (tab strip, header, status bar)
-ROW_BG        = "#ffffff"   # treeview row background
+PANEL_BG      = "#ffffff" 
+PANEL_BG_2    = "#eef2f8"   
+ROW_BG        = "#ffffff"   
 ROW_ALT_BG    = "#f5f8fc"
-SENT_ROW_BG   = "#dbeafe"   # light blue tint for "sent" rows
+SENT_ROW_BG   = "#dbeafe"   
 INPUT_BG      = "#ffffff"
-TEXT_LIGHT    = "#1a2233"   # primary text (dark, for the light background)
-TEXT_MUTED    = "#5b6472"   # secondary/muted text
-ACCENT_CORAL  = "#2563eb"   # primary blue accent
-ACCENT_GOLD   = "#3b82f6"   # lighter blue, used for hover states
-ACCENT_PINK   = "#1d4ed8"   # darker blue, used for pressed states
-ACCENT_DEEP   = "#d7dee8"   # neutral light border/outline color
+TEXT_LIGHT    = "#1a2233"  
+TEXT_MUTED    = "#5b6472"   
+ACCENT_CORAL  = "#2563eb"   
+ACCENT_GOLD   = "#3b82f6"   
+ACCENT_PINK   = "#1d4ed8"   
+ACCENT_DEEP   = "#d7dee8"  
 
-SIDEBAR_BG        = "#0f1f3d"   # dark navy sidebar
+SIDEBAR_BG        = "#0f1f3d"   
 SIDEBAR_BG_HOVER  = "#16305e"
 SIDEBAR_TEXT      = "#c3d3f0"
 SIDEBAR_TEXT_DIM  = "#7c8db3"
@@ -125,10 +106,6 @@ def sunset_color_at(fraction, stops=None, phase=0.0):
     return _rgb_to_hex(_lerp_color(stops[i], stops[j], t))
 
 
-# ----------------------------------------------------------------------------
-# Logging setup (file + GUI panel via a custom handler)
-# ----------------------------------------------------------------------------
-
 logger = logging.getLogger("bulk_mailer")
 logger.setLevel(logging.DEBUG)
 file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
@@ -158,9 +135,6 @@ class GuiLogHandler(logging.Handler):
             pass
 
 
-# ----------------------------------------------------------------------------
-# Data model: Mailing list persistence
-# ----------------------------------------------------------------------------
 
 class MailingList:
     """Holds recipient records: {name, email, attachment_path, date_added, sent, last_sent}."""
@@ -290,9 +264,7 @@ class MailingList:
         self.save()
 
 
-# ----------------------------------------------------------------------------
-# Email sending engine
-# ----------------------------------------------------------------------------
+
 
 class SmtpCredentials:
     def __init__(self, server, port, use_tls, use_ssl, username, password, from_addr=None):
@@ -422,8 +394,8 @@ class EmailSender:
                     if progress_cb:
                         progress_cb(done, total, addr, addr not in failed)
 
-                # Rate limit delay between batches (not after the very last batch)
-                if batch_start + batch_size < total and delay_seconds > 0:
+               
+                if batch_start + batch_size < total and delay_seconds > 4:
                     time.sleep(delay_seconds)
         finally:
             if not dry_run:
@@ -432,9 +404,6 @@ class EmailSender:
         return sent_count, failed
 
 
-# ----------------------------------------------------------------------------
-# Scheduler (simple file-persisted, in-process)
-# ----------------------------------------------------------------------------
 
 class JobScheduler:
     """
@@ -516,9 +485,6 @@ class JobScheduler:
         self._save()
 
 
-# ----------------------------------------------------------------------------
-# GUI Application
-# ----------------------------------------------------------------------------
 
 class BulkMailerApp:
     def __init__(self, root):
@@ -545,15 +511,13 @@ class BulkMailerApp:
 
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
-        # Show the login page first; the app shell stays built but hidden
-        # until the person logs in or chooses to skip.
+       
         self.login_frame.pack(fill="both", expand=True)
         self.root.update_idletasks()
         self._draw_login_background()
         self._start_login_animation()
 
-    # ---------------- Theme ----------------
-
+    
     def _setup_style(self):
         style = ttk.Style(self.root)
         try:
@@ -611,7 +575,7 @@ class BulkMailerApp:
 
         style.configure("TMenubutton", background=PANEL_BG_2, foreground=TEXT_LIGHT)
 
-    # ---------------- Login page ----------------
+  
 
     def _build_login_page(self):
         self.login_frame = tk.Frame(self.root, bg=PANEL_BG)
@@ -736,7 +700,7 @@ class BulkMailerApp:
         self._draw_login_background()
         self._start_login_animation()
 
-    # ---------------- App shell: sidebar + pages ----------------
+    
 
     def _build_app_shell(self):
         self.app_shell = ttk.Frame(self.root, style="Panel.TFrame")
@@ -857,7 +821,7 @@ class BulkMailerApp:
 
         frame.after(10, step)
 
-    # ---------------- Welcome (landing) page ----------------
+
 
     def _build_welcome_page(self):
         frame = self.page_welcome
@@ -924,12 +888,12 @@ class BulkMailerApp:
         self.stat_vars["sent"].set(str(sent))
         self.stat_vars["pending"].set(str(total - sent))
 
-    # --- Mailing List tab ---
+    
 
     def _build_list_tab(self):
         frame = self.tab_list
 
-        # ── Row 1: Add email ──────────────────────────────────────────────
+        
         top = ttk.Frame(frame)
         top.pack(fill="x", padx=8, pady=(8, 2))
 
@@ -944,7 +908,6 @@ class BulkMailerApp:
         ttk.Button(top, text="Auto-Match Folder...", command=self._auto_match_folder).pack(side="left", padx=2)
         ttk.Button(top, text="Reset Sent Flags", command=self._reset_sent).pack(side="left", padx=8)
 
-        # ── Row 2: Search / filter ────────────────────────────────────────
         search_frame = ttk.Frame(frame)
         search_frame.pack(fill="x", padx=8, pady=2)
         ttk.Label(search_frame, text="Search:").pack(side="left")
